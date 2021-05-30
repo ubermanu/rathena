@@ -1,4 +1,4 @@
-name: docker hub CI
+name: Build and publish edge image to Docker Hub
 on:
   push:
     branches: master
@@ -30,6 +30,6 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
           context: .
-          tags: rathena/rathena:latest
+          tags: rathena/rathena:edge
           platforms: linux/amd64
           push: true
