@@ -1,0 +1,61 @@
+name: Publish images
+
+on:
+  push:
+    branches: [master]
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: prere
+            packetver: '20131223'
+            default: true
+          - mode: prere
+            packetver: '20200304'
+          - mode: renewal
+            packetver: '20220406'
+            default: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Compute tags
+        id: tags
+        run: |
+          image="ghcr.io/${{ github.repository_owner }}/rathena-${{ matrix.mode }}"
+          tags="${image}:$(date -u +%Y%m%d)-packet${{ matrix.packetver }}"
+          if [ "${{ matrix.default }}" = "true" ]; then
+            tags="${tags},${image}:nightly,${image}:latest"
+          fi
+          echo "image=${image}" >> "$GITHUB_OUTPUT"
+          echo "tags=${tags}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          build-args: |
+            PACKETVER=${{ matrix.packetver }}
+            PRERE=${{ matrix.mode == 'prere' && 'yes' || 'no' }}
+            PACKET_OBFUSCATION=no
+          cache-from: type=gha,scope=${{ matrix.mode }}-${{ matrix.packetver }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.mode }}-${{ matrix.packetver }}
