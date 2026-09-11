@@ -1,0 +1,7 @@
+.git
+.github
+doc
+tools/docker
+*.sln
+*.slnLaunch
+mac.rathena-start.scpt
