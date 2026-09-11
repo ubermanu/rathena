@@ -13,7 +13,6 @@ permissions:
 
 jobs:
   publish:
-    if: github.repository != 'rathena/rathena'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
